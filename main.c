@@ -14,6 +14,15 @@ char *readable_fs(double size, char *buf)
     sprintf(buf, "%.*f %s", i, size, units[i]);
     return buf;
 }
+double precent = 0.0;
+int isDone = 1;
+DWORD WINAPI myThread(LPVOID lpParameter)
+{
+	  while(isDone){
+          printf("%0.2f%c \r", precent, '%');
+      }
+      return 0;
+}
 int main(void)
 {
     char *filenames[5] =
@@ -39,7 +48,7 @@ int main(void)
     }
     char buffer[1024];
     DWORD bytesRead = 0;
-    HANDLE hFile = CreateFile(TEXT("Manzil.mp3"),
+    HANDLE hFile = CreateFile(TEXT("1922.2017.720p.NF.WEBRip.x264.650MB-Pahe.in.mkv"),
                      GENERIC_READ,
                      0,
                      NULL,
@@ -53,19 +62,23 @@ int main(void)
     double processed = 0;
     printf("Name: %s \nSize: %s (%d Bytes)\n", filenames[sel],readable_fs(filesize, buf), (int)filesize);
 
-    
+	unsigned int myCounter = 0;
+	DWORD myThreadID;
+	HANDLE myHandle = CreateThread(0, 0, myThread, &myCounter, 0, &myThreadID);
 
     while (ReadFile(hFile, buffer, 1024, &bytesRead, NULL))
     {
         crc = crc_update(crc, buffer, bytesRead);
     
         processed += bytesRead;
-        double precent = (processed / filesize) * 100.0;
+        precent = (processed / filesize) * 100.0;
        // printf("%d\r",(int)bytesRead);;
        // printf("%0.2f%c \r", precent, '%');
        // fflush(stdout);
         if(bytesRead < 1024){
+             isDone = 0;
             break;
+           
         }
     }
 
@@ -76,6 +89,7 @@ int main(void)
     end = clock();
     double cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     printf("Time taken: %f s\n", cpu_time_used);
-	
+	WaitForSingleObject(myHandle,INFINITE);
+	CloseHandle(myHandle);
     return 0;
 }
